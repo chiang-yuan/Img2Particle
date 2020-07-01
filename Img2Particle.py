@@ -15,3 +15,4 @@ parser.add_argument('--version', action='version', version='%(prog)s {:d}.{:d}'.
 
 args = parser.parse_args()
 print(args)
+print("how are you")
