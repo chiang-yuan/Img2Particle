@@ -10,6 +10,7 @@ Copyright (c) 6th/June/2020 Yuan Chiang
 '''
 import sys
 import argparse
+import glob
 import numpy as np
 import math
 from matplotlib import pyplot as plt
@@ -105,7 +106,7 @@ for i in range(nx):
             id_ = id_ + 1
             atoms[id_,colx:colz+1] = np.dot(np.transpose(unit),[[i+0.5-mx],[j+0.5-my],[k-mz]]).reshape(-1)
 
-print("Create atoms: %d" % natoms)
+print("Create atoms: {:d}".format(natoms))
 
 # ===== Change Types
 
@@ -152,13 +153,13 @@ if single == True:
     atoms[:,dtype.get('id')] = np.arange(1,natoms+1)
     color = [str(item/(ntypes+1)) for item in atoms[:,colt]]
 
-plt.figure(figsize=[12.8, 9.6], dpi=220, facecolor=None, edgecolor=None, frameon=True)
+plt.figure(figsize=[12.8, 9.6], dpi=330, facecolor=None, edgecolor=None, frameon=True)
 
 plt.subplot(121)
 plt.imshow(img,cmap='viridis')
 
 plt.subplot(122)
-plt.scatter(atoms[:,colx],atoms[:,coly],s=unit[0,0]/2.0,marker=".",c=color)
+plt.scatter(atoms[:,colx],atoms[:,coly],s=0.1,marker="o",c=color)
 ax = plt.gca()
 ax.set_aspect(1.0)
 plt.savefig(infile+'_conversion.png')
