@@ -33,8 +33,10 @@ parser.add_argument('-lz', dest='lz', metavar='Lz',type=float, default=1,
                     help='model size in z dimension\t(default = 1)')
 parser.add_argument('-s', dest='s', metavar='lc', type=float, default=100,
                     help='lattice constant = particle spacing along (100)\t(default = 100)')
+parser.add_argument('-t', dest='types', metavar='types', type=int, default=2,
+                    help='number of particle types')
 parser.add_argument('-n',dest='nsize', metavar='len', nargs=2, type=float, default=[500, 3400],
-                    help='create notch with lengths in x and y dimension')
+                    help='create notch with lengths in x and y dimension\t(default = [500, 3400])')
 parser.add_argument('--version', action='version', version='%(prog)s {:s}'.format(version))
 
 args = parser.parse_args()
@@ -110,7 +112,7 @@ print("Create atoms: {:d}".format(natoms))
 
 # ===== Change Types
 
-ntypes = 2
+ntypes = args.types
 
 rows, cols = img.shape
 colt = dtype.get('type')
@@ -156,7 +158,7 @@ if single == True:
 plt.figure(figsize=[12.8, 9.6], dpi=330, facecolor=None, edgecolor=None, frameon=True)
 
 plt.subplot(121)
-plt.imshow(img,cmap='viridis')
+plt.imshow(img,cmap='gist_gray')
 
 plt.subplot(122)
 plt.scatter(atoms[:,colx],atoms[:,coly],s=0.1,marker="o",c=color)
