@@ -90,7 +90,7 @@ nz = nz + 2*mz
 
 dtype = dict(zip(['id', 'molecule', 'type', 'q', 'x', 'y', 'z', 'ix', 'iy', 'iz'], [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]))
 
-natoms = int(2*nx*ny+1)
+natoms = int(2*nx*ny)
 
 atoms = np.zeros((natoms,10))
 atoms[:,dtype.get('id')] = np.arange(1,natoms+1)
@@ -103,10 +103,11 @@ colz = dtype.get('z')
 for i in range(nx):
     for j in range(ny):
         for k in range(nz):
-            id_ = id_ + 1
             atoms[id_,colx:colz+1] = np.dot(np.transpose(unit),[[i-mx],[j-my],[k-mz]]).reshape(-1)
             id_ = id_ + 1
             atoms[id_,colx:colz+1] = np.dot(np.transpose(unit),[[i+0.5-mx],[j+0.5-my],[k-mz]]).reshape(-1)
+            id_ = id_ + 1
+
 
 print("Create atoms: {:d}".format(natoms))
 
@@ -119,7 +120,7 @@ colt = dtype.get('type')
 
 hist, bin_edges = np.histogram(img.reshape(-1),bins=ntypes)
 
-print(bin_edges)
+print(hist, bin_edges)
 
 for i in range(natoms):
     x = int(round(atoms[i,colx]/lx*cols));
