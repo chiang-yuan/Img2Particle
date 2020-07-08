@@ -62,7 +62,7 @@ plt.gca().set_axis_off()
 
 #plt.margins(0,0)
 plt.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
-
+plt.savefig('test.png', bbox_inches='tight', pad_inches=0)
 plt.show()
 '''
 if type == "v":

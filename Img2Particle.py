@@ -8,7 +8,7 @@ MIT License
 
 Copyright (c) 6th/June/2020 Yuan Chiang
 '''
-import sys
+import os
 import argparse
 import glob
 import numpy as np
@@ -24,7 +24,7 @@ parser = argparse.ArgumentParser(prog='Img2Particle',
 
 parser.add_argument('infile', metavar='images', type=str,
                     help='absolute or relative address of image files')
-parser.add_argument('-o', dest='outfile', metavar='data file', type=argparse.FileType('w'))
+parser.add_argument('-o', dest='outfile', metavar='data file', type=str)
 parser.add_argument('-lx', dest='lx', metavar='Lx', type=float, default=25600,
                     help='model size in x dimension\t(default = 25600)')
 parser.add_argument('-ly', dest='ly', metavar='Ly',type=float, default=25600,
@@ -166,19 +166,23 @@ ax = plt.gca()
 ax.set_aspect(1.0)
 plt.savefig(infile+'_conversion.png')
 
-
-if single == True:
-    outfilename = infile + "_single.data"
+if args.outfile is None:
+    outfile = os.path.splitext(infile)[0] + '.data'
 else:
-    outfilename = infile + ".data"
-print('Write data file')
-print('\t%s' % outfilename)
+    if args.outfile.lower().endswith('data'):
+        outfile = args.outfile
+    else:
+        outfile = args.outfile + '.data'
 
-with open(outfilename, "w") as outfile:
+print('Write data file: {}'.format(outfile))
+
+with open(outfile, "w") as outfile:
     now = datetime.now().strftime("%Y/%m/%d %H:%M:%S")
     outfile.write("LAMMPS data created via Img2Particle at "+now+"\n")
     outfile.write("\n%d atoms\n" % natoms)
+    outfile.write('# use create_bonds command in lammps to create springs\n')
     outfile.write("\n%d atom types\n" % ntypes)
+    outfile.write("%d bond types\n" % int(math.factorial(ntypes+2-1)/(math.factorial(2)*math.factorial(ntypes-1))))
 
     outfile.write("\n%12.5E %12.5E xlo xhi\n" % (np.min(atoms[:,colx]),np.max(atoms[:,colx])))
     outfile.write("%12.5E %12.5E ylo yhi\n" % (np.min(atoms[:,coly]),np.max(atoms[:,coly])))
