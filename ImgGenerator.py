@@ -99,6 +99,11 @@ elif style == 'h':
             id_ = id_ + 1
     points[:,0] = points[:,0] - ((np.max(points[:,0]) + np.min(points[:,0]))/2.0 - lx/2.0) - np.dot(np.transpose(unit),[[0.25],[0.25]])[0]
     points[:,1] = points[:,1] - ((np.max(points[:,1]) + np.min(points[:,1]))/2.0 - ly/2.0) - np.dot(np.transpose(unit),[[0.25],[0.25]])[1]
+else:
+    print('Error: Unreconized Style')
+    quit()
+
+
 
 points = np.append(points, [[1000*lx,1000*ly], [-999*lx,1000*ly], [1000*lx,-999*ly], [-999*lx,-999*ly]], axis = 0)
 
@@ -120,7 +125,7 @@ else:
 
 iter = 0
 width = 5
-rate = 0.5*width
+rate = 0.5
 
 while True:
     fig, ax = plt.subplots(facecolor=(0, 0, 0))
@@ -135,15 +140,15 @@ while True:
     img = import_img(outfile)
     hist, bin_edges = np.histogram(img.reshape(-1),bins=3)
     porosity = float(hist[0])/float(np.sum(hist))
-    if abs((porosity - args.porosity)/args.porosity) < 1e-3 or iter > 25 :
+    if abs((porosity - args.porosity)/args.porosity) < 1e-2:
         break
     else:
         if iter == 0:
-            descent = math.tanh((porosity - args.porosity)/args.porosity)
+            descent = ((porosity - args.porosity)/args.porosity)
         else:
-            descent = 0.7*descent + 0.3*math.tanh((porosity - args.porosity)/args.porosity)
+            descent = 0.5*descent + 0.5*((porosity - args.porosity)/args.porosity)
 
-        width = width + descent*rate
+        width = width + descent*rate*width
 
         iter = iter + 1
         print('Iter {} \t Porosity = {:f} \t Try width {:f}'.format(iter,porosity,width),end='\r')
@@ -151,15 +156,3 @@ while True:
         plt.close()
 
 print('Iter {} \t Porosity = {:f} \t Final wall width {:f}'.format(iter,porosity,width))
-
-
-
-
-'''
-if type == "v":
-    plt.savefig("/home/swclab/Documents/lammps/picture/Voronoi.jpg",dpi=330, bbox_inches = 'tight',pad_inches = 0)
-elif type == "s":
-    plt.savefig("/home/swclab/Documents/lammps/picture/Square.jpg",dpi=330, bbox_inches = 'tight',pad_inches = 0)
-elif type == "h":
-    plt.savefig("/home/swclab/Documents/lammps/picture/Hexagon.jpg",dpi=330, bbox_inches = 'tight',pad_inches = 0)
-'''
