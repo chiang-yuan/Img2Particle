@@ -1,11 +1,18 @@
 """
 Created on Fri Jul  3 11:27:35 2020
-Author: HsienChun Chan, Yuan Chiang
+Author: HsienChun Chen, Yuan Chiang
 
 
 
 MIT License
 Copyright (c) 6th/June/2020
+
+======================================================================
+version 1.1
+    Add Fibonacci style
+28th/July/2020 by HsienChun Chen
+======================================================================
+
 """
 import os
 import argparse
@@ -22,13 +29,15 @@ def import_img(infile):
     array = np.asarray(img, dtype="int32")
     return array
 
-version = '1.0'
+version = '1.1'
 
 parser = argparse.ArgumentParser(prog='ImgGenerator',
                                  description='Generate images with different pattern')
 
+#parser.add_argument('style', metavar='style', type=str,
+#                    help='available styles: s (square), h (hexagon), r (random)')
 parser.add_argument('style', metavar='style', type=str,
-                    help='available styles: s (square), h (hexagon), r (random)')
+                    help='available styles: s (square), h (hexagon), r (random) , f (fibonacci)')
 parser.add_argument('-o', dest='outfile', metavar='image file', type=str)
 parser.add_argument('-lx', dest='lx', metavar='Lx', type=float, default=256,
                     help='image size in x dimension\t(default = 256)')
@@ -99,6 +108,45 @@ elif style == 'h':
             id_ = id_ + 1
     points[:,0] = points[:,0] - ((np.max(points[:,0]) + np.min(points[:,0]))/2.0 - lx/2.0) - np.dot(np.transpose(unit),[[0.25],[0.25]])[0]
     points[:,1] = points[:,1] - ((np.max(points[:,1]) + np.min(points[:,1]))/2.0 - ly/2.0) - np.dot(np.transpose(unit),[[0.25],[0.25]])[1]
+
+
+elif style == 'f':
+
+    golden_angle = math.pi * (3 - math.sqrt(5))
+
+    def fibonacci(n):
+        point = np.zeros((n,2))
+        count = 0
+        for i in range(n):
+            theta = i * golden_angle
+            r = np.sqrt(lx*ly) * math.sqrt(i) / math.sqrt(n)
+            point[i,0]=(r * math.cos(theta)+0.5*lx)
+            point[i,1]=(r * math.sin(theta)+0.5*ly)
+
+        for i in range(n):
+            if point[i,0]<=lx and point[i,0]>=0 and point[i,1]<=ly and point[i,1]>=0:
+                count = count + 1
+        return point , count
+
+
+    f_iter = 0
+    d_num = 0
+
+    while True:
+
+        dn = math.floor(num - d_num * num)
+        if abs ((fibonacci(dn)[1]-num)//num) < 1e-2 or f_iter >= 200 :
+            points = fibonacci(dn)[0]
+            break
+        else:
+            if f_iter == 0:
+                d_num = (fibonacci(dn)[1]-num)//num
+            else:
+                d_num = d_num + (fibonacci(dn)[1]-num)/num
+
+            f_iter = f_iter + 1
+
+
 else:
     print('Error: Unreconized Style')
     quit()
@@ -140,7 +188,7 @@ while True:
     img = import_img(outfile)
     hist, bin_edges = np.histogram(img.reshape(-1),bins=3)
     porosity = float(hist[0])/float(np.sum(hist))
-    if abs((porosity - args.porosity)/args.porosity) < 1e-2:
+    if abs((porosity - args.porosity)/args.porosity) < 1e-2 or iter >= 50 :
         break
     else:
         if iter == 0:

@@ -35,7 +35,7 @@ parser.add_argument('-s', dest='s', metavar='lc', type=float, default=100,
                     help='lattice constant = particle spacing along (100)\t(default = 100)')
 parser.add_argument('-t', dest='types', metavar='types', type=int, default=2,
                     help='number of particle types')
-parser.add_argument('-n',dest='nsize', metavar='len', nargs=2, type=float, default=[500, 3400],
+parser.add_argument('-n',dest='nsize', metavar='len', nargs=2, type=float, default=[250, 3400],
                     help='create notch with lengths in x and y dimension\t(default = [500, 3400])')
 parser.add_argument('--version', action='version', version='%(prog)s {:s}'.format(version))
 
