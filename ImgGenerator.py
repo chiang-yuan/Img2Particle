@@ -2,17 +2,8 @@
 Created on Fri Jul  3 11:27:35 2020
 Author: HsienChun Chen, Yuan Chiang
 
-
-
 MIT License
 Copyright (c) 6th/June/2020
-
-======================================================================
-version 1.1
-    Add Fibonacci style
-28th/July/2020 by HsienChun Chen
-======================================================================
-
 """
 import os
 import argparse
@@ -22,6 +13,7 @@ import math
 from scipy.spatial import Voronoi, voronoi_plot_2d
 from matplotlib import pyplot as plt
 from PIL import Image
+from poisson import PoissonDisc
 
 def import_img(infile):
     img = Image.open(infile).convert('L')
@@ -29,22 +21,20 @@ def import_img(infile):
     array = np.asarray(img, dtype="int32")
     return array
 
-version = '1.1'
+version = '1.2'
 
 parser = argparse.ArgumentParser(prog='ImgGenerator',
                                  description='Generate images with different pattern')
 
-#parser.add_argument('style', metavar='style', type=str,
-#                    help='available styles: s (square), h (hexagon), r (random)')
 parser.add_argument('style', metavar='style', type=str,
-                    help='available styles: s (square), h (hexagon), r (random) , f (fibonacci)')
+                    help='available styles: f (fibonacci), p (poisson disc), h (hexagon), s (square), r (random)')
 parser.add_argument('-o', dest='outfile', metavar='image file', type=str)
 parser.add_argument('-lx', dest='lx', metavar='Lx', type=float, default=256,
                     help='image size in x dimension\t(default = 256)')
 parser.add_argument('-ly', dest='ly', metavar='Ly',type=float, default=256,
                     help='image size in y dimension\t(default = 256)')
 parser.add_argument('-n', dest='num', metavar='num', type=int, default=256,
-                    help='number of particles\t(default = 256)')
+                    help='number of inclusions\t(default = 256)')
 parser.add_argument('-p', dest='porosity', metavar='porosity',type=float, default=0.6,
                     help='porosity\t(default = 0.6)')
 parser.add_argument('--version', action='version', version='%(prog)s {:s}'.format(version))
@@ -58,13 +48,14 @@ lx = args.lx
 ly = args.ly
 
 if style == 'r':
+    """Random"""
     points = np.concatenate((np.random.uniform(0,lx,size=(num,1)),np.random.uniform(0,ly,size=(num,1))),
                             axis=1)
-    #points = np.random.rand(num,2)   # 0703,0706 using n=128
-elif style == 's':
 
+elif style == 's':
+    """Sqaure"""
     s = (lx+ly)/(2*math.sqrt(num))
-    unit = s*np.array([[1,0],[0,1]], dtype=float) # distant unit
+    unit = s*np.array([[1,0],[0,1]], dtype=float)
 
     nx = int(round(lx/unit[0,0]))
     ny = int(round(ly/unit[1,1]))
@@ -84,8 +75,39 @@ elif style == 's':
     points[:,0] = points[:,0] - ((np.max(points[:,0]) + np.min(points[:,0]))/2.0 - lx/2.0) - np.dot(np.transpose(unit),[[0.5],[0.5]])[0]
     points[:,1] = points[:,1] - ((np.max(points[:,1]) + np.min(points[:,1]))/2.0 - ly/2.0) - np.dot(np.transpose(unit),[[0.5],[0.5]])[1]
 
-elif style == 'h':
+elif style == 'p':
+    """Poisson disc"""
 
+    # minimum distance between two points
+    minr = 0.7*math.sqrt(float(lx*ly)/float(num))
+
+    # maximum number of neighbouring points drawn from the annulus of inner radius
+    # r and outer radius 2r at one time
+    maxk = 30
+
+    p_iter = 0
+    while True:
+        '''
+        For mathematical detials of algorithm, please see
+        - https://scipython.com/blog/poisson-disc-sampling-in-python/
+        Christian Hill, March 2017.
+        - Corsini, Massimiliano, Paolo Cignoni, and Roberto Scopigno. "Efficient
+        and flexible sampling with blue noise properties of triangular meshes."
+        IEEE transactions on visualization and computer graphics 18.6 (2012): 914-924.
+        '''
+        dist = PoissonDisc(width=lx, height=ly, r=minr, k=maxk)
+        point = dist.sample()
+        p_num = len(point)
+        if abs((p_num-num)/num) < 1e-2 or p_iter >= 200 :
+            points = np.array(point)
+            print(p_iter, points.shape)
+            break
+        else:
+            minr = minr + minr*(p_num-num)/num
+            p_iter = p_iter + 1
+
+elif style == 'h':
+    """Hexagon"""
     s = (lx+ly)/(2*math.sqrt(num))
     unit = s*np.array([[1,0],[0,math.sqrt(3.)]], dtype=float) # distant unit
 
@@ -111,7 +133,7 @@ elif style == 'h':
 
 
 elif style == 'f':
-
+    """Fibonacci"""
     golden_angle = math.pi * (3 - math.sqrt(5))
 
     def fibonacci(n):
@@ -135,12 +157,12 @@ elif style == 'f':
     while True:
 
         dn = math.floor(num - d_num * num)
-        if abs ((fibonacci(dn)[1]-num)//num) < 1e-2 or f_iter >= 200 :
+        if abs ((fibonacci(dn)[1]-num)/num) < 1e-2 or f_iter >= 200 :
             points = fibonacci(dn)[0]
             break
         else:
             if f_iter == 0:
-                d_num = (fibonacci(dn)[1]-num)//num
+                d_num = (fibonacci(dn)[1]-num)/num
             else:
                 d_num = d_num + (fibonacci(dn)[1]-num)/num
 
@@ -152,55 +174,55 @@ else:
     quit()
 
 
+if __name__ == "__main__":
+    points = np.append(points, [[1000*lx,1000*ly], [-999*lx,1000*ly], [1000*lx,-999*ly], [-999*lx,-999*ly]], axis = 0)
 
-points = np.append(points, [[1000*lx,1000*ly], [-999*lx,1000*ly], [1000*lx,-999*ly], [-999*lx,-999*ly]], axis = 0)
+    vor = Voronoi(points,furthest_site=False)
 
-vor = Voronoi(points,furthest_site=False)
+    if args.outfile is None:
+        i = 0
+        while True:
+            outfile = '{:s}_{:3d}_{:.1f}_{:02d}.png'.format(args.style.upper(),args.num,args.porosity,i)
+            if os.path.isfile(outfile):
+                i = i + 1
+            else:
+                break
+    else:
+        if args.outfile.lower().endswith('png'):
+            outfile = args.outfile
+        else:
+            outfile = args.outfile + '.png'
 
-if args.outfile is None:
-    i = 0
+    iter = 0
+    width = 5
+    rate = 0.5
+
     while True:
-        outfile = '{:s}_{:3d}_{:.1f}_{:02d}.png'.format(args.style.upper(),args.num,args.porosity,i)
-        if os.path.isfile(outfile):
-            i = i + 1
-        else:
+        fig, ax = plt.subplots(facecolor=(0, 0, 0))
+        voronoi_plot_2d(vor, ax=ax,
+                        line_width=width, line_colors='white',
+                        show_vertices=False, show_points=False)
+        ax.set(xlim=[0,lx], ylim=[0,ly], aspect='equal')
+        ax.set_axis_off()
+        plt.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
+        plt.savefig(outfile, facecolor='black', bbox_inches='tight', pad_inches=0, dpi=110)
+        #plt.show()
+        img = import_img(outfile)
+        hist, bin_edges = np.histogram(img.reshape(-1),bins=3)
+        porosity = float(hist[0])/float(np.sum(hist))
+        if abs((porosity - args.porosity)/args.porosity) < 1e-2 or iter >= 50 :
             break
-else:
-    if args.outfile.lower().endswith('png'):
-        outfile = args.outfile
-    else:
-        outfile = args.outfile + '.png'
-
-iter = 0
-width = 5
-rate = 0.5
-
-while True:
-    fig, ax = plt.subplots(facecolor=(0, 0, 0))
-    voronoi_plot_2d(vor, ax=ax,
-                    line_width=width, line_colors='white',
-                    show_vertices=False, show_points=False)
-    ax.set(xlim=[0,lx], ylim=[0,ly], aspect='equal')
-    ax.set_axis_off()
-    plt.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
-    plt.savefig(outfile, facecolor='black', bbox_inches='tight', pad_inches=0, dpi=110)
-    #plt.show()
-    img = import_img(outfile)
-    hist, bin_edges = np.histogram(img.reshape(-1),bins=3)
-    porosity = float(hist[0])/float(np.sum(hist))
-    if abs((porosity - args.porosity)/args.porosity) < 1e-2 or iter >= 50 :
-        break
-    else:
-        if iter == 0:
-            descent = ((porosity - args.porosity)/args.porosity)
         else:
-            descent = 0.5*descent + 0.5*((porosity - args.porosity)/args.porosity)
+            if iter == 0:
+                descent = ((porosity - args.porosity)/args.porosity)
+            else:
+                descent = 0.5*descent + 0.5*((porosity - args.porosity)/args.porosity)
 
-        width = width + descent*rate*width
+            width = width + descent*rate*width
 
-        iter = iter + 1
-        print('Iter {} \t Porosity = {:f} \t Try width {:f}'.format(iter,porosity,width),end='\r')
+            iter = iter + 1
+            print('Iter {} \t Porosity = {:f} \t Try width {:f}'.format(iter,porosity,width),end='\r')
 
-        plt.close()
+            plt.close()
 
-print('Iter {} \t Porosity = {:f} \t Final wall width {:f}'.format(iter,porosity,width))
+    print('Iter {} \t Porosity = {:f} \t Final wall width {:f}'.format(iter,porosity,width))
